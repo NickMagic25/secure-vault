@@ -106,6 +106,37 @@ make install DEVELOPMENT_TEAM=YOURTEAMID BUNDLE_ID=com.example.vault
 wrapper is installed to `/usr/local/bin` when that directory is writable, or
 `~/.local/bin` otherwise.
 
+## Testing & Validation
+
+Run the unit tests:
+
+```bash
+swift test
+```
+
+The unit tests cover pure helper behavior and SQLite credential/secret storage
+using temporary database files. They do not trigger Touch ID or Apple Watch.
+
+For a signed, end-to-end validation that exercises authentication plus password
+and JSON secret store, read, update, apply, and delete flows:
+
+```bash
+make install DEVELOPMENT_TEAM=YOURTEAMID
+scripts/validate-secure-vault.sh
+```
+
+Or point the script at a specific signed CLI executable:
+
+```bash
+SECURE_VAULT_BIN=.build/release/SecureVault.app/Contents/MacOS/secure-vault \
+  scripts/validate-secure-vault.sh
+```
+
+The validation script sets `SECURE_VAULT_DB_PATH` to an isolated temporary
+SQLite file and uses a unique Secure Enclave key tag. Expect Touch ID or Apple
+Watch prompts during the run. The script deletes its validation key at the end;
+if it is interrupted, it prints the cleanup command for that key tag.
+
 ## Usage
 
 The first password or secret write automatically creates the default Secure
