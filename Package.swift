@@ -21,5 +21,11 @@ let package = Package(
                 .linkedLibrary("sqlite3"),
             ]
         ),
+        .testTarget(
+            name: "SecureVaultTests",
+            dependencies: [
+                .target(name: "secure-vault"),
+            ]
+        ),
     ]
 )
