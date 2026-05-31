@@ -7,17 +7,18 @@ struct KeygenCommand: ParsableCommand {
     )
 
     @Option(name: .shortAndLong, help: "Unique tag to identify this key.")
-    var tag: String = "io.securevault.default"
+    var tag: String = SecureEnclaveManager.defaultPasswordKeyTag
 
     @Option(name: .shortAndLong, help: "Human-readable label (optional).")
     var label: String?
 
     func run() throws {
-        _ = try SecureEnclaveManager.generateKey(tag: tag, label: label)
+        let keyLabel = label ?? "Secure Vault password key"
+        _ = try SecureEnclaveManager.generateKey(tag: tag, label: keyLabel)
         print("Key generated.")
         print("  tag:   \(tag)")
-        if let label { print("  label: \(label)") }
+        print("  label: \(keyLabel)")
         print("")
-        print("Decryption will require Touch ID or Apple Watch.")
+        print("Password access will require Touch ID or Apple Watch.")
     }
 }

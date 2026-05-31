@@ -21,6 +21,9 @@ struct DeleteCommand: ParsableCommand {
                 return
             }
         }
+
+        printErr("Authenticating... (Touch ID or Apple Watch required)")
+        try SecureEnclaveManager.authenticate(reason: "Delete Secure Vault key \(tag)")
         try SecureEnclaveManager.deleteKey(tag: tag)
         print("Key '\(tag)' deleted.")
     }

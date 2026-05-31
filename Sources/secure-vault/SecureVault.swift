@@ -4,17 +4,25 @@ import ArgumentParser
 struct SecureVault: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "secure-vault",
-        abstract: "Encrypt and decrypt data using the Secure Enclave.",
+        abstract: "Manage local app passwords and JSON secrets using the Secure Enclave.",
         discussion: """
-            Encrypted data can only be decrypted after authenticating with
-            Touch ID or an Apple Watch. The private key never leaves the chip.
+            Passwords and JSON secrets are stored in a local SQLite vault after
+            being encrypted with a Secure Enclave key. Reading, updating,
+            deleting, and key deletion require Touch ID or Apple Watch
+            authentication.
             """,
         version: "1.0.0",
         subcommands: [
+            EncryptPasswordCommand.self,
+            GetPasswordCommand.self,
+            UpdatePasswordCommand.self,
+            DeletePasswordCommand.self,
+            MakeSecretCommand.self,
+            UpdateSecretCommand.self,
+            GetSecretCommand.self,
+            DeleteSecretCommand.self,
+            ApplySecretCommand.self,
             KeygenCommand.self,
-            EncryptCommand.self,
-            DecryptCommand.self,
-            ListCommand.self,
             DeleteCommand.self,
         ]
     )

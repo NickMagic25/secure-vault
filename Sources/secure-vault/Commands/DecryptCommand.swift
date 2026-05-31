@@ -1,48 +1,34 @@
 import ArgumentParser
 import Foundation
 
-struct DecryptCommand: ParsableCommand {
+struct GetPasswordCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "decrypt",
-        abstract: "Decrypt a file or stdin. Requires Touch ID or Apple Watch."
+        commandName: "get-password",
+        abstract: "Decrypt and print a stored password. Requires Touch ID or Apple Watch."
     )
 
-    @Option(name: .shortAndLong, help: "Key tag to use for decryption.")
-    var tag: String = "io.securevault.default"
+    @Option(name: .long, help: "App or service name.")
+    var app: String
 
-    @Option(name: .shortAndLong, help: "Encrypted binary file to decrypt. Reads base64 from stdin if omitted.")
-    var input: String?
-
-    @Option(name: .shortAndLong, help: "Output file for decrypted data. Writes to stdout if omitted.")
-    var output: String?
-
-    @Option(name: .long, help: "Reason string shown in the Touch ID / Apple Watch prompt.")
-    var reason: String = "Decrypt data with Secure Vault"
+    @Option(name: .long, help: "Username for the app or service.")
+    var username: String
 
     func run() throws {
-        let ciphertext: Data
-        if let path = input {
-            ciphertext = try Data(contentsOf: URL(fileURLWithPath: path))
-        } else {
-            let raw = FileHandle.standardInput.readDataToEndOfFile()
-            let b64 = String(data: raw, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard let decoded = Data(base64Encoded: b64) else {
-                throw ValidationError("Could not base64-decode input. Pipe 'encrypt' output directly or use --input with a binary file.")
-            }
-            ciphertext = decoded
-        }
+        let app = try normalizedCredentialField(app, name: "App")
+        let username = try normalizedCredentialField(username, name: "Username")
+
+        let record = try CredentialStore().credential(app: app, username: username)
 
         printErr("Authenticating... (Touch ID or Apple Watch required)")
-        let plaintext = try SecureEnclaveManager.decrypt(data: ciphertext, tag: tag, reason: reason)
+        let plaintext = try SecureEnclaveManager.decrypt(
+            data: record.ciphertext,
+            tag: record.keyTag,
+            reason: "Reveal password for \(username) on \(app)"
+        )
 
-        if let path = output {
-            try plaintext.write(to: URL(fileURLWithPath: path))
-            printErr("Decrypted to \(path)")
-        } else if let text = String(data: plaintext, encoding: .utf8) {
-            print(text, terminator: "")
-        } else {
-            FileHandle.standardOutput.write(plaintext)
+        guard let password = String(data: plaintext, encoding: .utf8) else {
+            throw ValidationError("Stored password is not valid UTF-8.")
         }
+        print(password, terminator: "")
     }
 }
