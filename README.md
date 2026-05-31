@@ -111,7 +111,7 @@ wrapper is installed to `/usr/local/bin` when that directory is writable, or
 Run the unit tests:
 
 ```bash
-swift test
+make test
 ```
 
 The unit tests cover pure helper behavior and SQLite credential/secret storage
@@ -121,11 +121,17 @@ For a signed, end-to-end validation that exercises authentication plus password
 and JSON secret store, read, update, apply, and delete flows:
 
 ```bash
-make install DEVELOPMENT_TEAM=YOURTEAMID
-scripts/validate-secure-vault.sh
+make full-test DEVELOPMENT_TEAM=YOURTEAMID
 ```
 
-Or point the script at a specific signed CLI executable:
+If `SecureVault.local.xcconfig` already contains your `DEVELOPMENT_TEAM`, run:
+
+```bash
+make full-test
+```
+
+You can also run the validation script directly against a specific signed CLI
+executable:
 
 ```bash
 SECURE_VAULT_BIN=.build/release/SecureVault.app/Contents/MacOS/secure-vault \
