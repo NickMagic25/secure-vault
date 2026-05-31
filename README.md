@@ -29,17 +29,26 @@ In Xcode:
 1. Open `secure-vault.xcodeproj`
 2. Select the `secure-vault` project in the navigator
 3. Select the `secure-vault` macOS app target
-4. Go to **Signing & Capabilities**
-5. Set Team to your Apple Developer account
+4. Create `SecureVault.local.xcconfig` with your local Team ID:
+
+```text
+DEVELOPMENT_TEAM = YOURTEAMID
+```
+
+5. Go to **Signing & Capabilities**
 6. Keep Automatically manage signing enabled
 7. Confirm the bundle identifier is `io.securevault`
 8. Build once
+
+Do not change the Team dropdown in Xcode unless you are willing to discard that
+local `.pbxproj` edit. The Team ID is intentionally supplied by
+`SecureVault.local.xcconfig`, which is ignored by git.
 
 ```text
 PRODUCT_BUNDLE_IDENTIFIER = io.securevault
 CODE_SIGN_ENTITLEMENTS = SecureVault.entitlements
 ENABLE_HARDENED_RUNTIME = YES
-DEVELOPMENT_TEAM = <your Apple Developer Team ID>
+# DEVELOPMENT_TEAM is loaded from SecureVault.local.xcconfig
 ```
 
 The app bundle contains the CLI at `SecureVault.app/Contents/MacOS/secure-vault`.
@@ -70,6 +79,11 @@ security find-identity -v -p codesigning
 make install DEVELOPMENT_TEAM=YOURTEAMID
 ```
 
+If `SecureVault.local.xcconfig` exists, you can omit the command-line Team ID:
+```bash
+make install
+```
+
 Override the bundle ID if needed:
 ```bash
 make install DEVELOPMENT_TEAM=YOURTEAMID BUNDLE_ID=com.example.vault
@@ -82,9 +96,18 @@ make install
 ```
 
 `make install` copies `SecureVault.app` to `/Applications` and installs a small
-`secure-vault` wrapper in `/usr/local/bin` that executes the signed CLI inside
-the app bundle. Keeping the executable inside the signed app bundle preserves the
-embedded provisioning profile that backs the Keychain access group.
+`secure-vault` wrapper that executes the signed CLI inside the app bundle. The
+wrapper is installed to `/usr/local/bin` when that directory is writable, or
+`~/.local/bin` otherwise. Keeping the executable inside the signed app bundle
+preserves the embedded provisioning profile that backs the Keychain access
+group.
+
+To force a specific wrapper location:
+```bash
+make install BIN_DIR="$HOME/.local/bin"
+# or, for a system-wide wrapper:
+sudo make install BIN_DIR=/usr/local/bin
+```
 
 ## Usage
 
