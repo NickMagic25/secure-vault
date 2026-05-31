@@ -1,4 +1,5 @@
 import Foundation
+import Dispatch
 import LocalAuthentication
 import Security
 
@@ -9,6 +10,8 @@ enum VaultError: LocalizedError {
     case encryptionFailed(Error)
     case decryptionFailed(Error)
     case algorithmUnsupported
+    case authenticationUnavailable(String)
+    case authenticationFailed(Error)
     case keychainError(OSStatus)
 
     var errorDescription: String? {
@@ -16,7 +19,7 @@ enum VaultError: LocalizedError {
         case .keyAlreadyExists(let tag):
             return "Key '\(tag)' already exists. Run 'secure-vault delete --tag \(tag)' first."
         case .keyNotFound(let tag):
-            return "No key found with tag '\(tag)'. Run 'secure-vault keygen --tag \(tag)' first."
+            return "No key found with tag '\(tag)'."
         case .keyGenerationFailed(let err):
             return "Key generation failed: \(err.localizedDescription)"
         case .encryptionFailed(let err):
@@ -25,6 +28,10 @@ enum VaultError: LocalizedError {
             return "Decryption failed: \(err.localizedDescription)"
         case .algorithmUnsupported:
             return "ECIES algorithm is not supported for this key."
+        case .authenticationUnavailable(let reason):
+            return "Touch ID or Apple Watch authentication is unavailable: \(reason)"
+        case .authenticationFailed(let err):
+            return "Authentication failed: \(err.localizedDescription)"
         case .keychainError(let status):
             let msg = (SecCopyErrorMessageString(status, nil) as String?) ?? "unknown"
             return "Keychain error (\(status)): \(msg)"
@@ -34,8 +41,16 @@ enum VaultError: LocalizedError {
 
 enum SecureEnclaveManager {
     private static let algorithm = SecKeyAlgorithm.eciesEncryptionCofactorVariableIVX963SHA256AESGCM
+    static let defaultPasswordKeyTag = "io.securevault.password-manager"
 
     // MARK: - Key management
+
+    static func ensureKey(tag: String, label: String?) throws -> SecKey {
+        if keyExists(tag: tag) {
+            return try fetchKey(tag: tag, context: nil)
+        }
+        return try generateKey(tag: tag, label: label)
+    }
 
     static func generateKey(tag: String, label: String?) throws -> SecKey {
         guard !keyExists(tag: tag) else { throw VaultError.keyAlreadyExists(tag) }
@@ -83,6 +98,37 @@ enum SecureEnclaveManager {
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw VaultError.keychainError(status)
         }
+    }
+
+    static func authenticate(reason: String) throws {
+        let context = LAContext()
+
+        let policy: LAPolicy
+        if #available(macOS 15.0, *) {
+            policy = .deviceOwnerAuthenticationWithBiometricsOrCompanion
+        } else {
+            policy = .deviceOwnerAuthenticationWithBiometricsOrWatch
+        }
+
+        var authError: NSError?
+        guard context.canEvaluatePolicy(policy, error: &authError) else {
+            throw VaultError.authenticationUnavailable(authError?.localizedDescription ?? "no eligible authenticator is configured")
+        }
+
+        let semaphore = DispatchSemaphore(value: 0)
+        var result: Result<Void, Error> = .failure(VaultError.authenticationUnavailable("authentication did not complete"))
+
+        context.evaluatePolicy(policy, localizedReason: reason) { success, error in
+            if success {
+                result = .success(())
+            } else {
+                result = .failure(error.map(VaultError.authenticationFailed) ?? VaultError.authenticationUnavailable("authentication was cancelled"))
+            }
+            semaphore.signal()
+        }
+
+        semaphore.wait()
+        try result.get()
     }
 
     static func listKeys() throws -> [(tag: String, label: String?)] {
