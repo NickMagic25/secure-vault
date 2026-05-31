@@ -1,0 +1,10 @@
+// Apply this xcconfig to the secure-vault executable target in Xcode,
+// or copy these values into the target's Build Settings.
+
+PRODUCT_BUNDLE_IDENTIFIER = io.securevault
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_ENTITLEMENTS = SecureVault.entitlements
+ENABLE_HARDENED_RUNTIME = YES
+
+// Set this in Xcode's Signing settings, or uncomment and replace with your Team ID.
+// DEVELOPMENT_TEAM = YOURTEAMID

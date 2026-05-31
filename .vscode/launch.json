@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:secure-vault}",
+            "name": "Debug secure-vault",
+            "target": "secure-vault",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug secure-vault"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:secure-vault}",
+            "name": "Release secure-vault",
+            "target": "secure-vault",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release secure-vault"
+        }
+    ]
+}
