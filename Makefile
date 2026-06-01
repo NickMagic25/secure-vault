@@ -3,6 +3,7 @@ BUILD_DIR = .build/release
 XCODE_PROJECT = secure-vault.xcodeproj
 APP_PRODUCT = SecureVault.app
 APP_EXECUTABLE = $(BUILD_DIR)/$(APP_PRODUCT)/Contents/MacOS/$(PRODUCT)
+VALIDATION_SCRIPT = scripts/validate-secure-vault.sh
 APP_INSTALL_DIR ?= /Applications
 SYSTEM_BIN_DIR = /usr/local/bin
 USER_BIN_DIR ?= $(HOME)/.local/bin
@@ -20,10 +21,18 @@ DEVELOPMENT_TEAM ?=
 BUNDLE_ID        ?= io.securevault
 LOCAL_SIGNING_CONFIG = SecureVault.local.xcconfig
 
-.PHONY: build sign install uninstall clean
+.PHONY: build test full-test full-tests sign install uninstall clean
 
 build:
 	swift build -c release
+
+test:
+	swift test
+
+full-test: test sign
+	SECURE_VAULT_BIN="$(CURDIR)/$(APP_EXECUTABLE)" "$(VALIDATION_SCRIPT)"
+
+full-tests: full-test
 
 # sign uses xcodebuild so Xcode's automatic signing can create/refresh the
 # provisioning profile that backs the keychain-access-groups entitlement.
