@@ -12,6 +12,13 @@ public enum VaultItemKind: String, CaseIterable, Hashable {
         }
     }
 
+    public var singularTitle: String {
+        switch self {
+        case .password: "Password"
+        case .secret: "Secret"
+        }
+    }
+
     public var systemImage: String {
         switch self {
         case .password: "key.fill"

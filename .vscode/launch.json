@@ -19,6 +19,26 @@
             "target": "secure-vault",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release secure-vault"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:secure-vault}",
+            "name": "Debug SecureVault",
+            "target": "SecureVault",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug SecureVault"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:secure-vault}",
+            "name": "Release SecureVault",
+            "target": "SecureVault",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release SecureVault"
         }
     ]
 }

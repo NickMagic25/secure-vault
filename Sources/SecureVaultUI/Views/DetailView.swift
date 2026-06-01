@@ -5,9 +5,6 @@ struct DetailView: View {
     @ObservedObject var viewModel: VaultViewModel
     let onNewPassword: () -> Void
     let onNewSecret: () -> Void
-    let onEditPassword: (VaultItem) -> Void
-    let onEditSecret: (VaultItem, String?) -> Void
-    let onDelete: (VaultItem) -> Void
 
     var body: some View {
         Group {
@@ -16,7 +13,6 @@ struct DetailView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         header(for: item)
                         revealedContent(for: item)
-                        metadata(for: item)
                     }
                     .padding(24)
                     .frame(maxWidth: 760, alignment: .leading)
@@ -72,37 +68,7 @@ struct DetailView: View {
 
             Spacer()
 
-            Button {
-                Task { await viewModel.revealSelected() }
-            } label: {
-                Label("Reveal", systemImage: "eye")
-            }
-            .disabled(viewModel.isWorking)
-
-            Menu {
-                Button {
-                    switch item.kind {
-                    case .password:
-                        onEditPassword(item)
-                    case .secret:
-                        onEditSecret(item, currentSecretJSON)
-                    }
-                } label: {
-                    Label("Edit", systemImage: "pencil")
-                }
-
-                Divider()
-
-                Button(role: .destructive) {
-                    onDelete(item)
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-            } label: {
-                Label("More", systemImage: "ellipsis.circle")
-            }
-            .menuStyle(.button)
-            .disabled(viewModel.isWorking)
+            timestampSummary(for: item)
         }
     }
 
@@ -110,65 +76,158 @@ struct DetailView: View {
     private func revealedContent(for item: VaultItem) -> some View {
         switch viewModel.selectedRevealedValue {
         case .password(let password):
-            GroupBox("Password") {
+            VStack(alignment: .leading, spacing: 0) {
+                revealedActionBar(title: "Password") {
+                    viewModel.hideSelected()
+                } copyAction: {
+                    copyToPasteboard(password)
+                }
+
+                Divider()
+
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Text(password)
                         .font(.system(.body, design: .monospaced))
                         .textSelection(.enabled)
                         .lineLimit(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Button {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(password, forType: .string)
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
                 }
-                .padding(.vertical, 2)
+                .padding(12)
             }
+            .background(.quaternary.opacity(0.16), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.separator.opacity(0.28))
+            )
         case .secretJSON(let json):
-            GroupBox("Secret") {
-                VStack(alignment: .trailing, spacing: 10) {
-                    ScrollView {
-                        Text(json)
-                            .font(.system(.body, design: .monospaced))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(8)
-                    }
-                    .frame(minHeight: 180, maxHeight: 320)
-                    .background(.quaternary.opacity(0.18), in: RoundedRectangle(cornerRadius: 6))
+            VStack(alignment: .leading, spacing: 0) {
+                revealedActionBar(title: "Secret") {
+                    viewModel.hideSelected()
+                } copyAction: {
+                    copyToPasteboard(json)
+                }
 
-                    Button {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(json, forType: .string)
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
-                }
+                Divider()
+
+                secretFields(json: json)
             }
+            .background(.quaternary.opacity(0.16), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.separator.opacity(0.28))
+            )
         default:
-            GroupBox {
-                HStack(spacing: 12) {
-                    Image(systemName: "lock.fill")
-                        .foregroundStyle(.secondary)
-                    Text("Locked")
-                        .font(.headline)
-                    Spacer()
-                    Button {
-                        Task { await viewModel.revealSelected() }
-                    } label: {
-                        Label("Reveal", systemImage: "eye")
-                    }
-                    .disabled(viewModel.isWorking)
+            HStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.secondary)
+                Text("Locked")
+                    .font(.headline)
+                Spacer()
+                Button {
+                    Task { await viewModel.revealSelected() }
+                } label: {
+                    Label("Reveal", systemImage: "eye")
                 }
-                .padding(.vertical, 4)
+                .disabled(viewModel.isWorking)
             }
+            .padding(12)
+            .background(.quaternary.opacity(0.16), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.separator.opacity(0.28))
+            )
         }
     }
 
-    private func metadata(for item: VaultItem) -> some View {
-        GroupBox("Details") {
+    @ViewBuilder
+    private func secretFields(json: String) -> some View {
+        if let rows = try? SecretField.rows(from: json) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Key Values")
+                    .font(.headline)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 12)
+
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                            SecretFieldRow(field: row) {
+                                copyToPasteboard(row.value)
+                            }
+                            if index < rows.count - 1 {
+                                Divider()
+                                    .padding(.leading, 12)
+                            }
+                        }
+                    }
+                }
+                .frame(maxHeight: 420)
+            }
+        } else {
+            ScrollView {
+                Text(json)
+                    .font(.system(.body, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+            }
+            .frame(minHeight: 180, maxHeight: 420)
+            .padding(8)
+        }
+    }
+
+    private func revealedActionBar(
+        title: String,
+        hideAction: @escaping () -> Void,
+        copyAction: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.headline)
+            Spacer()
+            iconButton("Hide", systemImage: "eye.slash", action: hideAction)
+            iconButton("Copy", systemImage: "doc.on.doc", action: copyAction)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    private func iconButton(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 24, height: 24)
+        }
+        .buttonStyle(.borderless)
+        .help(title)
+    }
+
+    private func copyToPasteboard(_ value: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(value, forType: .string)
+    }
+
+    private func timestampSummary(for item: VaultItem) -> some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Text("Created \(item.createdAt.localVaultTimestamp)")
+            Text("Updated \(item.updatedAt.localVaultTimestamp)")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.trailing)
+    }
+}
+
+struct DetailsSheet: View {
+    let item: VaultItem
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Details")
+                .font(.title2)
+                .fontWeight(.semibold)
+
             Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 10) {
                 if let app = item.app {
                     detailRow("App", app)
@@ -180,12 +239,21 @@ struct DetailView: View {
                     detailRow("Name", secretName)
                 }
                 detailRow("Key Tag", item.keyTag)
-                detailRow("Created", item.createdAt)
-                detailRow("Updated", item.updatedAt)
+                detailRow("Created", item.createdAt.localVaultTimestamp)
+                detailRow("Updated", item.updatedAt.localVaultTimestamp)
             }
             .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack {
+                Spacer()
+                Button("Done") {
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
         }
+        .padding(22)
+        .frame(width: 520)
     }
 
     private func detailRow(_ label: String, _ value: String) -> some View {
@@ -196,9 +264,60 @@ struct DetailView: View {
                 .lineLimit(2)
         }
     }
+}
 
-    private var currentSecretJSON: String? {
-        guard case .secretJSON(let json) = viewModel.selectedRevealedValue else { return nil }
-        return json
+private struct SecretFieldRow: View {
+    let field: SecretField
+    let onCopy: () -> Void
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 14) {
+            Text(field.key)
+                .font(.system(.callout, design: .monospaced))
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .textSelection(.enabled)
+                .frame(width: 180, alignment: .leading)
+
+            Text(field.value)
+                .font(.system(.body, design: .monospaced))
+                .lineLimit(4)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: onCopy) {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 13, weight: .semibold))
+                    .frame(width: 24, height: 24)
+            }
+            .buttonStyle(.borderless)
+            .help("Copy \(field.key)")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
+}
+
+private extension String {
+    var localVaultTimestamp: String {
+        guard let date = Self.vaultTimestampParser.date(from: self) else {
+            return self
+        }
+        return Self.vaultTimestampDisplay.string(from: date)
+    }
+
+    static let vaultTimestampParser: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    static let vaultTimestampDisplay: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        formatter.doesRelativeDateFormatting = true
+        return formatter
+    }()
 }

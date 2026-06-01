@@ -1,4 +1,5 @@
 import Testing
+import SecureVaultCore
 @testable import SecureVaultUI
 
 @Suite("Vault GUI view model")
@@ -54,6 +55,92 @@ struct VaultViewModelTests {
         #expect(viewModel.selectedRevealedValue == .secretJSON("{\n  \"TOKEN\": \"secret\"\n}"))
     }
 
+    @Test("Hide clears a revealed selected value")
+    func hideSelectedValue() async {
+        let service = FakeVaultService(items: [.githubPassword])
+        let viewModel = VaultViewModel(service: service)
+        viewModel.refresh()
+
+        await viewModel.revealSelected()
+        #expect(viewModel.isSelectedItemRevealed)
+
+        viewModel.hideSelected()
+
+        #expect(!viewModel.isSelectedItemRevealed)
+        #expect(viewModel.selectedRevealedValue == nil)
+    }
+
+    @Test("Secret JSON rows show sorted top-level key values")
+    func secretJSONRows() throws {
+        let rows = try SecretField.rows(
+            from: """
+            {
+              "PORT": 5432,
+              "ENABLED": true,
+              "TOKEN": "secret",
+              "EMPTY": null
+            }
+            """
+        )
+
+        #expect(rows == [
+            SecretField(key: "EMPTY", value: ""),
+            SecretField(key: "ENABLED", value: "true"),
+            SecretField(key: "PORT", value: "5432"),
+            SecretField(key: "TOKEN", value: "secret"),
+        ])
+    }
+
+    @Test("Environment file output uses valid sorted dotenv lines")
+    func environmentFileOutput() throws {
+        let contents = try secretEnvironmentFile([
+            "PORT": 5432,
+            "ENABLED": true,
+            "TOKEN": "secret",
+            "QUOTE": "hello \"world\"",
+        ])
+
+        #expect(contents == """
+        ENABLED="true"
+        PORT="5432"
+        QUOTE="hello \\"world\\""
+        TOKEN="secret"
+        """)
+    }
+
+    @Test("Automatic refresh picks up CLI changes and locks revealed data")
+    func automaticRefreshFromVaultChanges() async {
+        let service = FakeVaultService(items: [.githubPassword])
+        let monitor = FakeVaultChangeMonitor()
+        let viewModel = VaultViewModel(service: service, changeMonitor: monitor)
+        viewModel.refresh()
+        viewModel.startAutomaticRefresh()
+
+        await viewModel.revealSelected()
+        #expect(viewModel.isSelectedItemRevealed)
+
+        service.items.append(.productionSecret)
+        monitor.emitChange()
+        await Task.yield()
+
+        #expect(monitor.startCount == 1)
+        #expect(viewModel.items.map(\.id) == [VaultItem.githubPassword.id, VaultItem.productionSecret.id])
+        #expect(!viewModel.isSelectedItemRevealed)
+        #expect(viewModel.selectedRevealedValue == nil)
+    }
+
+    @Test("Automatic refresh starts only once")
+    func automaticRefreshStartsOnlyOnce() {
+        let service = FakeVaultService(items: [.githubPassword])
+        let monitor = FakeVaultChangeMonitor()
+        let viewModel = VaultViewModel(service: service, changeMonitor: monitor)
+
+        viewModel.startAutomaticRefresh()
+        viewModel.startAutomaticRefresh()
+
+        #expect(monitor.startCount == 1)
+    }
+
     @Test("Creating a password refreshes metadata and selects the new row")
     func createPasswordRefreshesAndSelectsNewRow() async {
         let service = FakeVaultService(items: [.productionSecret])
@@ -66,6 +153,25 @@ struct VaultViewModelTests {
         #expect(viewModel.items.map(\.id).contains(VaultItem.githubPassword.id))
         #expect(viewModel.selectedItemID == VaultItem.githubPassword.id)
         #expect(viewModel.selectedRevealedValue == nil)
+    }
+
+    @Test("Secret context actions can fetch clone JSON and env file text")
+    func secretContextPayloads() async {
+        let service = FakeVaultService(items: [.productionSecret])
+        let viewModel = VaultViewModel(service: service)
+        viewModel.refresh()
+        guard let secret = viewModel.selectedItem else {
+            Issue.record("Expected a selected secret.")
+            return
+        }
+
+        let json = await viewModel.secretJSON(for: secret)
+        let envFile = await viewModel.secretEnvironmentFile(for: secret)
+
+        #expect(service.revealSecretRequests == ["production-db"])
+        #expect(service.revealSecretEnvironmentFileRequests == ["production-db"])
+        #expect(json == "{\n  \"TOKEN\": \"secret\"\n}")
+        #expect(envFile == "TOKEN=\"secret\"")
     }
 
     @Test("Deleting a selected item refreshes metadata and clears revealed data")
@@ -87,6 +193,7 @@ private final class FakeVaultService: VaultServicing {
     var items: [VaultItem]
     var revealPasswordRequests: [String] = []
     var revealSecretRequests: [String] = []
+    var revealSecretEnvironmentFileRequests: [String] = []
     var deletePasswordRequests: [String] = []
     var createdPasswordRequests: [String] = []
 
@@ -124,10 +231,35 @@ private final class FakeVaultService: VaultServicing {
         return "{\n  \"TOKEN\": \"secret\"\n}"
     }
 
+    func revealSecretEnvironmentFile(name: String) throws -> String {
+        revealSecretEnvironmentFileRequests.append(name)
+        return "TOKEN=\"secret\""
+    }
+
     func updateSecret(name: String, json: String) throws {}
 
     func deleteSecret(name: String) throws {
         items.removeAll { $0.secretName == name }
+    }
+}
+
+private final class FakeVaultChangeMonitor: VaultChangeMonitoring {
+    private var onChange: (@Sendable () -> Void)?
+    var startCount = 0
+    var stopCount = 0
+
+    func start(onChange: @escaping @Sendable () -> Void) {
+        startCount += 1
+        self.onChange = onChange
+    }
+
+    func stop() {
+        stopCount += 1
+        onChange = nil
+    }
+
+    func emitChange() {
+        onChange?()
     }
 }
 

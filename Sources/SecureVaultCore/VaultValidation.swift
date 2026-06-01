@@ -65,6 +65,19 @@ public func secretJSONString(_ dictionary: [String: Any], prettyPrinted: Bool = 
     return string
 }
 
+public func secretShellExportLines(_ dictionary: [String: Any]) throws -> [String] {
+    try dictionary.keys.sorted().map { key in
+        try shellExportLine(name: key, value: secretValueString(dictionary[key]!))
+    }
+}
+
+public func secretEnvironmentFile(_ dictionary: [String: Any]) throws -> String {
+    let lines = try dictionary.keys.sorted().map { key in
+        try environmentFileLine(name: key, value: secretValueString(dictionary[key]!))
+    }
+    return lines.joined(separator: "\n")
+}
+
 public func secretDictionary(from data: Data) throws -> [String: Any] {
     let object: Any
     do {
@@ -102,6 +115,13 @@ public func shellExportLine(name: String, value: String) throws -> String {
     return "export \(name)=\(shellQuoted(value))"
 }
 
+public func environmentFileLine(name: String, value: String) throws -> String {
+    guard isValidEnvironmentName(name) else {
+        throw VaultValidationError("Secret key '\(name)' is not a valid environment variable name.")
+    }
+    return "\(name)=\(environmentQuoted(value))"
+}
+
 private func validateSecretDictionary(_ dictionary: [String: Any]) throws {
     guard !dictionary.isEmpty else {
         throw VaultValidationError("Secret JSON must contain at least one key:value pair.")
@@ -125,4 +145,14 @@ private func isValidEnvironmentName(_ name: String) -> Bool {
 
 private func shellQuoted(_ value: String) -> String {
     "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+}
+
+private func environmentQuoted(_ value: String) -> String {
+    "\""
+    + value
+        .replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "\"", with: "\\\"")
+        .replacingOccurrences(of: "\n", with: "\\n")
+        .replacingOccurrences(of: "\r", with: "\\r")
+    + "\""
 }

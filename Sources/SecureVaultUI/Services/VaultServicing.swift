@@ -9,6 +9,7 @@ public protocol VaultServicing {
     func deletePassword(app: String, username: String) throws
     func createSecret(name: String, json: String) throws
     func revealSecretJSON(name: String) throws -> String
+    func revealSecretEnvironmentFile(name: String) throws -> String
     func updateSecret(name: String, json: String) throws
     func deleteSecret(name: String) throws
 }
@@ -115,15 +116,23 @@ public final class LiveVaultService: VaultServicing {
     }
 
     public func revealSecretJSON(name: String) throws -> String {
+        try secretJSONString(revealSecretDictionary(name: name, reason: "Reveal secret \(name)"), prettyPrinted: true)
+    }
+
+    public func revealSecretEnvironmentFile(name: String) throws -> String {
+        try secretEnvironmentFile(revealSecretDictionary(name: name, reason: "Copy secret \(name) as an environment file"))
+    }
+
+    private func revealSecretDictionary(name: String, reason: String) throws -> [String: Any] {
         let name = try normalizedVaultField(name, name: "Secret name")
         let record = try makeStore().secret(name: name)
         let plaintext = try SecureEnclaveManager.decrypt(
             data: record.ciphertext,
             tag: record.keyTag,
-            reason: "Reveal secret \(name)"
+            reason: reason
         )
 
-        return try secretJSONString(secretDictionary(from: plaintext), prettyPrinted: true)
+        return try secretDictionary(from: plaintext)
     }
 
     public func updateSecret(name: String, json: String) throws {

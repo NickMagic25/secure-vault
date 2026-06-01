@@ -174,10 +174,6 @@ struct ApplySecretCommand: ParsableCommand {
             reason: "Apply secret \(name)"
         )
 
-        let secret = try secretDictionary(from: plaintext)
-        let lines = try secret.keys.sorted().map { key in
-            try shellExportLine(name: key, value: secretValueString(secret[key]!))
-        }
-        print(lines.joined(separator: "\n"))
+        print(try secretShellExportLines(secretDictionary(from: plaintext)).joined(separator: "\n"))
     }
 }

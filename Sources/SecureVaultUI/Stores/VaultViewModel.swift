@@ -12,9 +12,17 @@ public final class VaultViewModel: ObservableObject {
     @Published public private(set) var errorMessage: String?
 
     private let service: VaultServicing
+    private let changeMonitor: VaultChangeMonitoring?
+    private var isMonitoringVaultChanges = false
+    private var needsExternalRefresh = false
 
-    public init(service: VaultServicing = LiveVaultService()) {
+    public convenience init(service: VaultServicing = LiveVaultService()) {
+        self.init(service: service, changeMonitor: VaultDirectoryMonitor())
+    }
+
+    init(service: VaultServicing, changeMonitor: VaultChangeMonitoring?) {
         self.service = service
+        self.changeMonitor = changeMonitor
     }
 
     public var filteredItems: [VaultItem] {
@@ -31,15 +39,52 @@ public final class VaultViewModel: ObservableObject {
         return revealedValue
     }
 
+    public var isSelectedItemRevealed: Bool {
+        selectedRevealedValue != nil
+    }
+
     public func refresh() {
+        refresh(clearingReveal: false)
+    }
+
+    public func startAutomaticRefresh() {
+        guard !isMonitoringVaultChanges else { return }
+        isMonitoringVaultChanges = true
+        changeMonitor?.start { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.refreshAfterExternalChange()
+            }
+        }
+    }
+
+    public func stopAutomaticRefresh() {
+        changeMonitor?.stop()
+        isMonitoringVaultChanges = false
+        needsExternalRefresh = false
+    }
+
+    private func refreshAfterExternalChange() {
+        guard !isWorking else {
+            needsExternalRefresh = true
+            return
+        }
+
+        refresh(clearingReveal: true)
+    }
+
+    private func refresh(clearingReveal shouldClearReveal: Bool) {
         do {
             let loadedItems = try service.loadItems()
             items = loadedItems
+            var shouldClearReveal = shouldClearReveal
             if let selectedItemID, !loadedItems.contains(where: { $0.id == selectedItemID }) {
                 self.selectedItemID = loadedItems.first?.id
-                clearReveal()
+                shouldClearReveal = true
             } else if selectedItemID == nil {
                 selectedItemID = loadedItems.first?.id
+            }
+            if shouldClearReveal {
+                clearReveal()
             }
             errorMessage = nil
         } catch {
@@ -83,6 +128,10 @@ public final class VaultViewModel: ObservableObject {
         }
     }
 
+    public func hideSelected() {
+        clearReveal()
+    }
+
     public func createPassword(app: String, username: String, password: String) async {
         let newID = VaultItem.passwordID(app: app.trimmingCharacters(in: .whitespacesAndNewlines), username: username.trimmingCharacters(in: .whitespacesAndNewlines))
         let service = self.service
@@ -113,6 +162,30 @@ public final class VaultViewModel: ObservableObject {
         await mutate(selecting: item.id) {
             try service.updateSecret(name: name, json: json)
         }
+    }
+
+    public func secretJSON(for item: VaultItem) async -> String? {
+        guard item.kind == .secret, let name = item.secretName else { return nil }
+        let service = self.service
+        var json: String?
+        await run {
+            try service.revealSecretJSON(name: name)
+        } apply: { value in
+            json = value
+        }
+        return json
+    }
+
+    public func secretEnvironmentFile(for item: VaultItem) async -> String? {
+        guard item.kind == .secret, let name = item.secretName else { return nil }
+        let service = self.service
+        var contents: String?
+        await run {
+            try service.revealSecretEnvironmentFile(name: name)
+        } apply: { value in
+            contents = value
+        }
+        return contents
     }
 
     public func deleteSelected() async {
@@ -167,6 +240,11 @@ public final class VaultViewModel: ObservableObject {
             apply(value)
         case .failure(let error):
             errorMessage = error.localizedDescription
+        }
+
+        if needsExternalRefresh {
+            needsExternalRefresh = false
+            refreshAfterExternalChange()
         }
     }
 

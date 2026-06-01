@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @MainActor
@@ -16,48 +17,36 @@ public struct ContentView: View {
 
     public var body: some View {
         NavigationSplitView {
-            SidebarView(viewModel: viewModel)
+            SidebarView(
+                viewModel: viewModel,
+                onNewPassword: { activeSheet = .newPassword },
+                onNewSecret: { activeSheet = .newSecret },
+                onCopySecretEnvironmentFile: copySecretEnvironmentFile,
+                onCloneSecret: prepareSecretClone
+            )
                 .navigationSplitViewColumnWidth(min: 240, ideal: 280)
         } detail: {
             DetailView(
                 viewModel: viewModel,
                 onNewPassword: { activeSheet = .newPassword },
-                onNewSecret: { activeSheet = .newSecret },
-                onEditPassword: { item in activeSheet = .editPassword(item) },
-                onEditSecret: { item, json in activeSheet = .editSecret(item, json) },
-                onDelete: { item in pendingDelete = item }
+                onNewSecret: { activeSheet = .newSecret }
             )
         }
         .frame(minWidth: 900, minHeight: 580)
+        .navigationTitle("SecureVault")
         .toolbar {
-            ToolbarItemGroup {
-                Button {
-                    viewModel.refresh()
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
+            ToolbarItemGroup(placement: .primaryAction) {
+                if let item = viewModel.selectedItem {
+                    selectedItemMenu(for: item)
                 }
-                .help("Refresh")
-
-                Menu {
-                    Button {
-                        activeSheet = .newPassword
-                    } label: {
-                        Label("Password", systemImage: "key.fill")
-                    }
-
-                    Button {
-                        activeSheet = .newSecret
-                    } label: {
-                        Label("Secret", systemImage: "curlybraces.square.fill")
-                    }
-                } label: {
-                    Label("Add", systemImage: "plus")
-                }
-                .help("Add")
             }
         }
         .task {
             viewModel.refresh()
+            viewModel.startAutomaticRefresh()
+        }
+        .onDisappear {
+            viewModel.stopAutomaticRefresh()
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
@@ -76,11 +65,18 @@ public struct ContentView: View {
                     activeSheet = nil
                     Task { await viewModel.createSecret(name: name, json: json) }
                 }
+            case .cloneSecret(let item, let json):
+                SecretEditorSheet(mode: .clone(item, json)) { name, json in
+                    activeSheet = nil
+                    Task { await viewModel.createSecret(name: name, json: json) }
+                }
             case .editSecret(let item, let json):
                 SecretEditorSheet(mode: .edit(item, json)) { _, json in
                     activeSheet = nil
                     Task { await viewModel.updateSelectedSecret(json: json) }
                 }
+            case .details(let item):
+                DetailsSheet(item: item)
             }
         }
         .confirmationDialog(
@@ -117,6 +113,79 @@ public struct ContentView: View {
         }
     }
 
+    private func copySecretEnvironmentFile(_ item: VaultItem) {
+        Task {
+            guard let contents = await viewModel.secretEnvironmentFile(for: item) else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(contents, forType: .string)
+        }
+    }
+
+    private func prepareSecretClone(_ item: VaultItem) {
+        Task {
+            guard let json = await viewModel.secretJSON(for: item) else { return }
+            activeSheet = .cloneSecret(item, json)
+        }
+    }
+
+    @ViewBuilder
+    private func selectedItemMenu(for item: VaultItem) -> some View {
+        Menu {
+            Button {
+                activeSheet = .details(item)
+            } label: {
+                Label("Show Details", systemImage: "info.circle")
+            }
+
+            if item.kind == .secret {
+                Button {
+                    copySecretEnvironmentFile(item)
+                } label: {
+                    Label("Copy as Env File", systemImage: "doc.on.clipboard")
+                }
+
+                Button {
+                    prepareSecretClone(item)
+                } label: {
+                    Label("Clone Secret", systemImage: "plus.square.on.square")
+                }
+            }
+
+            if viewModel.isSelectedItemRevealed {
+                Divider()
+
+                Button {
+                    switch item.kind {
+                    case .password:
+                        activeSheet = .editPassword(item)
+                    case .secret:
+                        activeSheet = .editSecret(item, currentSecretJSON)
+                    }
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+                pendingDelete = item
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        } label: {
+            Label("More", systemImage: "ellipsis.circle")
+                .labelStyle(.iconOnly)
+        }
+        .help("More actions")
+        .disabled(viewModel.isWorking)
+    }
+
+    private var currentSecretJSON: String? {
+        guard case .secretJSON(let json) = viewModel.selectedRevealedValue else { return nil }
+        return json
+    }
+
     private func deleteMessage(for item: VaultItem) -> String {
         switch item.kind {
         case .password:
@@ -131,14 +200,18 @@ private enum VaultSheet: Identifiable {
     case newPassword
     case editPassword(VaultItem)
     case newSecret
+    case cloneSecret(VaultItem, String?)
     case editSecret(VaultItem, String?)
+    case details(VaultItem)
 
     var id: String {
         switch self {
         case .newPassword: "new-password"
         case .editPassword(let item): "edit-password-\(item.id)"
         case .newSecret: "new-secret"
+        case .cloneSecret(let item, _): "clone-secret-\(item.id)"
         case .editSecret(let item, _): "edit-secret-\(item.id)"
+        case .details(let item): "details-\(item.id)"
         }
     }
 }
