@@ -42,5 +42,12 @@ let package = Package(
             name: "SecureVaultUITests",
             dependencies: ["SecureVaultUI"]
         ),
+        .testTarget(
+            name: "SecureVaultTests",
+            dependencies: [
+                "SecureVaultCore",
+                "SecureVaultCLI",
+            ]
+        ),
     ]
 )
