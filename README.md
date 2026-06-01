@@ -1,9 +1,10 @@
 # secure-vault
 
-A macOS CLI password and secrets manager backed by the Apple Secure Enclave.
-Passwords and JSON secrets are stored in a local SQLite vault only after being
-encrypted with a Secure Enclave public key. Reading, updating, deleting, and
-applying stored values require Touch ID or Apple Watch confirmation.
+A macOS CLI and SwiftUI password/secrets manager backed by the Apple Secure
+Enclave. Passwords and JSON secrets are stored in a local SQLite vault only
+after being encrypted with a Secure Enclave public key. Reading, updating,
+deleting, and applying stored values require Touch ID or Apple Watch
+confirmation.
 
 The vault database lives at:
 
@@ -107,6 +108,25 @@ wrapper is installed to `/usr/local/bin` when that directory is writable, or
 `~/.local/bin` otherwise.
 
 ## Usage
+
+### Launch the GUI
+
+The package now includes a native SwiftUI macOS app target. For a development
+app bundle:
+
+```bash
+./script/build_and_run.sh
+```
+
+The GUI lists password app names, usernames, and secret names without
+decrypting their values. Revealing a password or secret still performs the
+Secure Enclave decrypt operation and prompts for Touch ID or Apple Watch.
+
+Run the GUI-focused Swift Testing suite with:
+
+```bash
+swift test
+```
 
 The first password or secret write automatically creates the default Secure
 Enclave key if it does not exist. You can also create it explicitly:

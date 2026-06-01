@@ -1,4 +1,5 @@
 import ArgumentParser
+import SecureVaultCore
 
 struct KeygenCommand: ParsableCommand {
     static let configuration = CommandConfiguration(

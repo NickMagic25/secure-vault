@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import SecureVaultCore
 
 struct MakeSecretCommand: ParsableCommand {
     static let configuration = CommandConfiguration(

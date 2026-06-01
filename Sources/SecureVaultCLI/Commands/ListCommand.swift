@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import SecureVaultCore
 
 struct UpdatePasswordCommand: ParsableCommand {
     static let configuration = CommandConfiguration(

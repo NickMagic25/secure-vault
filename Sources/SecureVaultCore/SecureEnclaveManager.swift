@@ -3,7 +3,7 @@ import Dispatch
 import LocalAuthentication
 import Security
 
-enum VaultError: LocalizedError {
+public enum VaultError: LocalizedError {
     case keyAlreadyExists(String)
     case keyNotFound(String)
     case keyGenerationFailed(Error)
@@ -14,7 +14,7 @@ enum VaultError: LocalizedError {
     case authenticationFailed(Error)
     case keychainError(OSStatus)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .keyAlreadyExists(let tag):
             return "Key '\(tag)' already exists. Run 'secure-vault delete --tag \(tag)' first."
@@ -39,20 +39,20 @@ enum VaultError: LocalizedError {
     }
 }
 
-enum SecureEnclaveManager {
+public enum SecureEnclaveManager {
     private static let algorithm = SecKeyAlgorithm.eciesEncryptionCofactorVariableIVX963SHA256AESGCM
-    static let defaultPasswordKeyTag = "io.securevault.password-manager"
+    public static let defaultPasswordKeyTag = "io.securevault.password-manager"
 
     // MARK: - Key management
 
-    static func ensureKey(tag: String, label: String?) throws -> SecKey {
+    public static func ensureKey(tag: String, label: String?) throws -> SecKey {
         if keyExists(tag: tag) {
             return try fetchKey(tag: tag, context: nil)
         }
         return try generateKey(tag: tag, label: label)
     }
 
-    static func generateKey(tag: String, label: String?) throws -> SecKey {
+    public static func generateKey(tag: String, label: String?) throws -> SecKey {
         guard !keyExists(tag: tag) else { throw VaultError.keyAlreadyExists(tag) }
 
         var cfError: Unmanaged<CFError>?
@@ -88,7 +88,7 @@ enum SecureEnclaveManager {
         return key
     }
 
-    static func deleteKey(tag: String) throws {
+    public static func deleteKey(tag: String) throws {
         let query: [String: Any] = [
             kSecClass as String:              kSecClassKey,
             kSecAttrApplicationTag as String: tagBytes(tag),
@@ -100,7 +100,7 @@ enum SecureEnclaveManager {
         }
     }
 
-    static func authenticate(reason: String) throws {
+    public static func authenticate(reason: String) throws {
         let context = LAContext()
 
         let policy: LAPolicy
@@ -131,7 +131,7 @@ enum SecureEnclaveManager {
         try result.get()
     }
 
-    static func listKeys() throws -> [(tag: String, label: String?)] {
+    public static func listKeys() throws -> [(tag: String, label: String?)] {
         let noAuthContext = LAContext()
         noAuthContext.interactionNotAllowed = true
         let query: [String: Any] = [
@@ -158,7 +158,7 @@ enum SecureEnclaveManager {
 
     // MARK: - Crypto
 
-    static func encrypt(data: Data, tag: String) throws -> Data {
+    public static func encrypt(data: Data, tag: String) throws -> Data {
         // Public key operations never require authentication.
         let privateKey = try fetchKey(tag: tag, context: nil)
         guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
@@ -174,7 +174,7 @@ enum SecureEnclaveManager {
         return ct as Data
     }
 
-    static func decrypt(data: Data, tag: String, reason: String) throws -> Data {
+    public static func decrypt(data: Data, tag: String, reason: String) throws -> Data {
         // The LAContext carries the reason string shown in the Touch ID / Watch prompt.
         let context = LAContext()
         context.localizedReason = reason
@@ -192,7 +192,7 @@ enum SecureEnclaveManager {
 
     // MARK: - Helpers
 
-    static func keyExists(tag: String) -> Bool {
+    public static func keyExists(tag: String) -> Bool {
         let noAuthContext = LAContext()
         noAuthContext.interactionNotAllowed = true
         let query: [String: Any] = [

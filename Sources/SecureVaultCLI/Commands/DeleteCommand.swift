@@ -1,4 +1,5 @@
 import ArgumentParser
+import SecureVaultCore
 
 struct DeleteCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
