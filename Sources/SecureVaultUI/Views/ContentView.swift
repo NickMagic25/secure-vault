@@ -22,7 +22,8 @@ public struct ContentView: View {
                 onNewPassword: { activeSheet = .newPassword },
                 onNewSecret: { activeSheet = .newSecret },
                 onCopySecretEnvironmentFile: copySecretEnvironmentFile,
-                onCloneSecret: prepareSecretClone
+                onCloneSecret: prepareSecretClone,
+                onDeleteItem: { pendingDelete = $0 }
             )
                 .navigationSplitViewColumnWidth(min: 240, ideal: 280)
         } detail: {
