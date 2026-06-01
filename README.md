@@ -141,7 +141,9 @@ SECURE_VAULT_BIN=.build/release/SecureVault.app/Contents/MacOS/secure-vault \
 The validation script sets `SECURE_VAULT_DB_PATH` to an isolated temporary
 SQLite file and uses a unique Secure Enclave key tag. Expect Touch ID or Apple
 Watch prompts during the run. The script deletes its validation key at the end;
-if it is interrupted, it prints the cleanup command for that key tag.
+if it is interrupted, it prints the cleanup command for that key tag. Failed
+auth commands are retried up to 3 times; override this with
+`SECURE_VAULT_AUTH_RETRIES`.
 
 ## Usage
 
