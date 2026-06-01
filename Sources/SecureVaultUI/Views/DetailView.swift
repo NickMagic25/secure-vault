@@ -301,13 +301,20 @@ private struct SecretFieldRow: View {
 
 private extension String {
     var localVaultTimestamp: String {
-        guard let date = Self.vaultTimestampParser.date(from: self) else {
+        guard let date = Self.vaultTimestampParser.date(from: self)
+            ?? Self.vaultTimestampFractionalParser.date(from: self) else {
             return self
         }
         return Self.vaultTimestampDisplay.string(from: date)
     }
 
     static let vaultTimestampParser: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    static let vaultTimestampFractionalParser: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
