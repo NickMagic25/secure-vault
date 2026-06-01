@@ -17,7 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A10000000000000000000060"
                BuildableName = "SecureVault.app"
-               BlueprintName = "secure-vault"
+               BlueprintName = "SecureVault"
                ReferencedContainer = "container:secure-vault.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -47,7 +47,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A10000000000000000000060"
             BuildableName = "SecureVault.app"
-            BlueprintName = "secure-vault"
+            BlueprintName = "SecureVault"
             ReferencedContainer = "container:secure-vault.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -64,7 +64,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A10000000000000000000060"
             BuildableName = "SecureVault.app"
-            BlueprintName = "secure-vault"
+            BlueprintName = "SecureVault"
             ReferencedContainer = "container:secure-vault.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

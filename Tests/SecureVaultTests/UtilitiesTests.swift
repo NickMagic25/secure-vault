@@ -1,6 +1,7 @@
 import XCTest
 
-@testable import secure_vault
+@testable import SecureVaultCLI
+@testable import SecureVaultCore
 
 final class UtilitiesTests: XCTestCase {
     func testNormalizedCredentialFieldTrimsWhitespace() throws {

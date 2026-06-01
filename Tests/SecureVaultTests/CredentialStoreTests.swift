@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 
-@testable import secure_vault
+@testable import SecureVaultCore
 
 final class CredentialStoreTests: XCTestCase {
     private var temporaryDirectories: [URL] = []

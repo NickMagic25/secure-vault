@@ -1,15 +1,18 @@
-PRODUCT  = secure-vault
+PRODUCT = SecureVault
+CLI_PRODUCT = secure-vault
 BUILD_DIR = .build/release
 XCODE_PROJECT = secure-vault.xcodeproj
+XCODE_SCHEME = secure-vault
 APP_PRODUCT = SecureVault.app
 APP_EXECUTABLE = $(BUILD_DIR)/$(APP_PRODUCT)/Contents/MacOS/$(PRODUCT)
+CLI_EXECUTABLE = $(BUILD_DIR)/$(APP_PRODUCT)/Contents/MacOS/$(CLI_PRODUCT)
 VALIDATION_SCRIPT = scripts/validate-secure-vault.sh
 APP_INSTALL_DIR ?= /Applications
 SYSTEM_BIN_DIR = /usr/local/bin
 USER_BIN_DIR ?= $(HOME)/.local/bin
 BIN_DIR ?= $(shell if [ -d "$(SYSTEM_BIN_DIR)" ] && [ -w "$(SYSTEM_BIN_DIR)" ]; then printf '%s' "$(SYSTEM_BIN_DIR)"; else printf '%s' "$(USER_BIN_DIR)"; fi)
 
-# Your Apple Developer Team ID — the value in parentheses from:
+# Your Apple Developer Team ID - the value in parentheses from:
 #   security find-identity -v -p codesigning
 # e.g. "Apple Development: Your Name (YOURTEAMID)" -> DEVELOPMENT_TEAM=YOURTEAMID
 #
@@ -18,25 +21,27 @@ BIN_DIR ?= $(shell if [ -d "$(SYSTEM_BIN_DIR)" ] && [ -w "$(SYSTEM_BIN_DIR)" ]; 
 #   make sign DEVELOPMENT_TEAM=YOURTEAMID
 #   make sign DEVELOPMENT_TEAM=YOURTEAMID BUNDLE_ID=com.example.vault
 DEVELOPMENT_TEAM ?=
-BUNDLE_ID        ?= io.securevault
+BUNDLE_ID ?= io.securevault
 LOCAL_SIGNING_CONFIG = SecureVault.local.xcconfig
 
 .PHONY: build test full-test full-tests sign install uninstall clean
 
 build:
-	swift build -c release
+	swift build -c release --product "$(PRODUCT)"
+	swift build -c release --product "$(CLI_PRODUCT)"
 
 test:
 	swift test
 
 full-test: test sign
-	SECURE_VAULT_BIN="$(CURDIR)/$(APP_EXECUTABLE)" "$(VALIDATION_SCRIPT)"
+	SECURE_VAULT_BIN="$(CURDIR)/$(CLI_EXECUTABLE)" "$(VALIDATION_SCRIPT)"
 
 full-tests: full-test
 
 # sign uses xcodebuild so Xcode's automatic signing can create/refresh the
-# provisioning profile that backs the keychain-access-groups entitlement.
-# CONFIGURATION_BUILD_DIR redirects the signed app bundle into .build/release/.
+# provisioning profile that backs the keychain-access-groups entitlement. The
+# app target depends on the CLI target and embeds the signed CLI helper into the
+# app bundle, so the resulting bundle supports both GUI and command-line use.
 sign:
 	@if [ -z "$(DEVELOPMENT_TEAM)" ] && ! grep -q '^[[:space:]]*DEVELOPMENT_TEAM[[:space:]]*=' "$(LOCAL_SIGNING_CONFIG)" 2>/dev/null; then \
 		echo "Error: pass your Team ID: make sign DEVELOPMENT_TEAM=XXXXXXXXXX"; \
@@ -45,7 +50,7 @@ sign:
 	fi
 	xcodebuild \
 		-project "$(XCODE_PROJECT)" \
-		-scheme "$(PRODUCT)" \
+		-scheme "$(XCODE_SCHEME)" \
 		-configuration Release \
 		-destination "platform=macOS" \
 		-derivedDataPath .build/xcode \
@@ -58,7 +63,8 @@ sign:
 		-allowProvisioningUpdates \
 		build
 	@echo "Signed $(BUILD_DIR)/$(APP_PRODUCT)"
-	@echo "CLI executable: $(APP_EXECUTABLE)"
+	@echo "GUI executable: $(APP_EXECUTABLE)"
+	@echo "CLI executable: $(CLI_EXECUTABLE)"
 
 install: sign
 	rm -rf "$(APP_INSTALL_DIR)/$(APP_PRODUCT)"
@@ -69,16 +75,16 @@ install: sign
 		echo "       Choose a writable directory with BIN_DIR=/path/to/bin, or run with sudo for a system install."; \
 		exit 1; \
 	}
-	printf '%s\n' '#!/bin/sh' 'exec "$(APP_INSTALL_DIR)/$(APP_PRODUCT)/Contents/MacOS/$(PRODUCT)" "$$@"' > "$(BIN_DIR)/$(PRODUCT)"
-	chmod 755 "$(BIN_DIR)/$(PRODUCT)"
+	printf '%s\n' '#!/bin/sh' 'exec "$(APP_INSTALL_DIR)/$(APP_PRODUCT)/Contents/MacOS/$(CLI_PRODUCT)" "$$@"' > "$(BIN_DIR)/$(CLI_PRODUCT)"
+	chmod 755 "$(BIN_DIR)/$(CLI_PRODUCT)"
 	@echo "Installed $(APP_INSTALL_DIR)/$(APP_PRODUCT)"
-	@echo "Installed CLI wrapper to $(BIN_DIR)/$(PRODUCT)"
-	@case ":$$PATH:" in *:"$(BIN_DIR)":*) ;; *) echo "Note: add $(BIN_DIR) to PATH to run $(PRODUCT) from any shell." ;; esac
+	@echo "Installed CLI wrapper to $(BIN_DIR)/$(CLI_PRODUCT)"
+	@case ":$$PATH:" in *:"$(BIN_DIR)":*) ;; *) echo "Note: add $(BIN_DIR) to PATH to run $(CLI_PRODUCT) from any shell." ;; esac
 
 uninstall:
-	rm -f "$(BIN_DIR)/$(PRODUCT)"
+	rm -f "$(BIN_DIR)/$(CLI_PRODUCT)"
 	rm -rf "$(APP_INSTALL_DIR)/$(APP_PRODUCT)"
-	@echo "Removed $(BIN_DIR)/$(PRODUCT)"
+	@echo "Removed $(BIN_DIR)/$(CLI_PRODUCT)"
 	@echo "Removed $(APP_INSTALL_DIR)/$(APP_PRODUCT)"
 
 clean:

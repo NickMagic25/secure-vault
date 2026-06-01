@@ -1,9 +1,10 @@
 # secure-vault
 
-A macOS CLI password and secrets manager backed by the Apple Secure Enclave.
-Passwords and JSON secrets are stored in a local SQLite vault only after being
-encrypted with a Secure Enclave public key. Reading, updating, deleting, and
-applying stored values require Touch ID or Apple Watch confirmation.
+A macOS CLI and SwiftUI password/secrets manager backed by the Apple Secure
+Enclave. Passwords and JSON secrets are stored in a local SQLite vault only
+after being encrypted with a Secure Enclave public key. Reading, updating,
+deleting, and applying stored values require Touch ID or Apple Watch
+confirmation.
 
 The vault database lives at:
 
@@ -45,7 +46,7 @@ In Xcode:
 
 1. Open `secure-vault.xcodeproj`
 2. Select the `secure-vault` project in the navigator
-3. Select the `secure-vault` macOS app target
+3. Select the `SecureVault` macOS app target
 4. Create `SecureVault.local.xcconfig` with your local Team ID:
 
 ```text
@@ -56,6 +57,10 @@ DEVELOPMENT_TEAM = YOURTEAMID
 6. Keep Automatically manage signing enabled
 7. Confirm the bundle identifier is `io.securevault`
 8. Build once
+
+The `SecureVault` app target depends on the `secure-vault` command-line target
+and embeds that CLI at `SecureVault.app/Contents/MacOS/secure-vault`. Building
+the app target in Xcode therefore builds both the GUI and CLI in one bundle.
 
 Do not change the Team dropdown in Xcode unless you are willing to discard that
 local `.pbxproj` edit. The Team ID is intentionally supplied by
@@ -72,8 +77,10 @@ You should see `com.apple.application-identifier`,
 
 ### Makefile build
 
-The `sign` target delegates to `xcodebuild` so Xcode's automatic signing can
-create the provisioning profile required for Keychain/Secure Enclave access.
+The `sign` target builds the same bundle layout as Xcode: the GUI executable is
+`SecureVault.app/Contents/MacOS/SecureVault`, and the CLI helper is
+`SecureVault.app/Contents/MacOS/secure-vault`. Both executables are signed with
+the same entitlements file so they use the same vault identity.
 
 Find your Team ID:
 
@@ -146,6 +153,27 @@ auth commands are retried up to 3 times; override this with
 `SECURE_VAULT_AUTH_RETRIES`.
 
 ## Usage
+
+### Launch the GUI
+
+The package now includes a native SwiftUI macOS app target. For a development
+app bundle:
+
+```bash
+./script/build_and_run.sh
+```
+
+The GUI lists password app names, usernames, and secret names without
+decrypting their values. Revealing a password or secret still performs the
+Secure Enclave decrypt operation and prompts for Touch ID or Apple Watch.
+While the GUI is open, it watches the shared vault database directory and
+automatically refreshes metadata after CLI writes.
+
+Run the GUI-focused Swift Testing suite with:
+
+```bash
+swift test
+```
 
 The first password or secret write automatically creates the default Secure
 Enclave key if it does not exist. You can also create it explicitly:

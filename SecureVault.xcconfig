@@ -1,4 +1,4 @@
-// Shared signing settings for the secure-vault executable target.
+// Shared signing settings for the SecureVault app and bundled secure-vault CLI.
 // Put machine-specific values in SecureVault.local.xcconfig.
 
 PRODUCT_BUNDLE_IDENTIFIER = io.securevault

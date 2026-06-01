@@ -7,19 +7,45 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000040 /* SecureVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* SecureVault.swift */; };
-		A10000000000000000000041 /* SecureEnclaveManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* SecureEnclaveManager.swift */; };
-		A10000000000000000000042 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* Utilities.swift */; };
+		A10000000000000000000040 /* SecureVaultCLI/SecureVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* SecureVaultCLI/SecureVault.swift */; };
+		A10000000000000000000042 /* SecureVaultCLI/Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* SecureVaultCLI/Utilities.swift */; };
 		A10000000000000000000043 /* DecryptCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000023 /* DecryptCommand.swift */; };
 		A10000000000000000000044 /* DeleteCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000024 /* DeleteCommand.swift */; };
 		A10000000000000000000045 /* EncryptCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000025 /* EncryptCommand.swift */; };
 		A10000000000000000000046 /* KeygenCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* KeygenCommand.swift */; };
 		A10000000000000000000047 /* ListCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000027 /* ListCommand.swift */; };
 		A10000000000000000000048 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000071 /* ArgumentParser */; };
-		A10000000000000000000049 /* CredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000028 /* CredentialStore.swift */; };
 		A1000000000000000000004A /* DeletePasswordCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000029 /* DeletePasswordCommand.swift */; };
 		A1000000000000000000004B /* SecretCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002A /* SecretCommands.swift */; };
+		B10000000000000000000048 /* SecureVaultCore in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000071 /* SecureVaultCore */; };
+		C10000000000000000000040 /* SecureVaultApp/SecureVaultApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000020 /* SecureVaultApp/SecureVaultApp.swift */; };
+		C10000000000000000000048 /* SecureVaultUI in Frameworks */ = {isa = PBXBuildFile; productRef = C10000000000000000000071 /* SecureVaultUI */; };
+		C10000000000000000000049 /* secure-vault in Embed CLI */ = {isa = PBXBuildFile; fileRef = C10000000000000000000030 /* secure-vault */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C10000000000000000000062 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C10000000000000000000060;
+			remoteInfo = "secure-vault";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C10000000000000000000052 /* Embed CLI */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				C10000000000000000000049 /* secure-vault in Embed CLI */,
+			);
+			name = "Embed CLI";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000010 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
@@ -27,18 +53,20 @@
 		A10000000000000000000012 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		A10000000000000000000013 /* SecureVault.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SecureVault.entitlements; sourceTree = "<group>"; };
 		A10000000000000000000014 /* SecureVault.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SecureVault.xcconfig; sourceTree = "<group>"; };
-		A10000000000000000000020 /* SecureVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVault.swift; sourceTree = "<group>"; };
-		A10000000000000000000021 /* SecureEnclaveManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureEnclaveManager.swift; sourceTree = "<group>"; };
-		A10000000000000000000022 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
+		A10000000000000000000020 /* SecureVaultCLI/SecureVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultCLI/SecureVault.swift; sourceTree = "<group>"; };
+		A10000000000000000000021 /* SecureVaultCore/SecureEnclaveManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultCore/SecureEnclaveManager.swift; sourceTree = "<group>"; };
+		A10000000000000000000022 /* SecureVaultCLI/Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultCLI/Utilities.swift; sourceTree = "<group>"; };
 		A10000000000000000000023 /* DecryptCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecryptCommand.swift; sourceTree = "<group>"; };
 		A10000000000000000000024 /* DeleteCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCommand.swift; sourceTree = "<group>"; };
 		A10000000000000000000025 /* EncryptCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptCommand.swift; sourceTree = "<group>"; };
 		A10000000000000000000026 /* KeygenCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeygenCommand.swift; sourceTree = "<group>"; };
 		A10000000000000000000027 /* ListCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListCommand.swift; sourceTree = "<group>"; };
-		A10000000000000000000028 /* CredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
+		A10000000000000000000028 /* SecureVaultCore/CredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultCore/CredentialStore.swift; sourceTree = "<group>"; };
 		A10000000000000000000029 /* DeletePasswordCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletePasswordCommand.swift; sourceTree = "<group>"; };
 		A1000000000000000000002A /* SecretCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretCommands.swift; sourceTree = "<group>"; };
 		A10000000000000000000030 /* SecureVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SecureVault.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10000000000000000000020 /* SecureVaultApp/SecureVaultApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultApp/SecureVaultApp.swift; sourceTree = "<group>"; };
+		C10000000000000000000030 /* secure-vault */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "secure-vault"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,7 +74,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000000000000000000048 /* SecureVaultUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000000000000000000051 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 				A10000000000000000000048 /* ArgumentParser in Frameworks */,
+				B10000000000000000000048 /* SecureVaultCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,6 +107,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000030 /* SecureVault.app */,
+				C10000000000000000000030 /* secure-vault */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,17 +115,17 @@
 		A10000000000000000000004 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				A10000000000000000000020 /* SecureVault.swift */,
-				A10000000000000000000021 /* SecureEnclaveManager.swift */,
-				A10000000000000000000028 /* CredentialStore.swift */,
-				A10000000000000000000022 /* Utilities.swift */,
-				A10000000000000000000005 /* Commands */,
+				C10000000000000000000020 /* SecureVaultApp/SecureVaultApp.swift */,
+				A10000000000000000000020 /* SecureVaultCLI/SecureVault.swift */,
+				A10000000000000000000021 /* SecureVaultCore/SecureEnclaveManager.swift */,
+				A10000000000000000000028 /* SecureVaultCore/CredentialStore.swift */,
+				A10000000000000000000022 /* SecureVaultCLI/Utilities.swift */,
+				A10000000000000000000005 /* SecureVaultCLI/Commands */,
 			);
-			name = Sources;
-			path = "Sources/secure-vault";
+			path = Sources;
 			sourceTree = "<group>";
 		};
-		A10000000000000000000005 /* Commands */ = {
+		A10000000000000000000005 /* SecureVaultCLI/Commands */ = {
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000023 /* DecryptCommand.swift */,
@@ -98,18 +136,39 @@
 				A10000000000000000000029 /* DeletePasswordCommand.swift */,
 				A1000000000000000000002A /* SecretCommands.swift */,
 			);
-			path = Commands;
+			path = SecureVaultCLI/Commands;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A10000000000000000000060 /* secure-vault */ = {
+		A10000000000000000000060 /* SecureVault */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A10000000000000000000085 /* Build configuration list for PBXNativeTarget "secure-vault" */;
+			buildConfigurationList = A10000000000000000000085 /* Build configuration list for PBXNativeTarget "SecureVault" */;
 			buildPhases = (
 				A10000000000000000000050 /* Sources */,
 				A10000000000000000000051 /* Frameworks */,
+				C10000000000000000000052 /* Embed CLI */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C10000000000000000000061 /* PBXTargetDependency */,
+			);
+			name = SecureVault;
+			packageProductDependencies = (
+				C10000000000000000000071 /* SecureVaultUI */,
+			);
+			productName = SecureVault;
+			productReference = A10000000000000000000030 /* SecureVault.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C10000000000000000000060 /* secure-vault */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C10000000000000000000085 /* Build configuration list for PBXNativeTarget "secure-vault" */;
+			buildPhases = (
+				C10000000000000000000050 /* Sources */,
+				C10000000000000000000051 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -118,10 +177,11 @@
 			name = "secure-vault";
 			packageProductDependencies = (
 				A10000000000000000000071 /* ArgumentParser */,
+				B10000000000000000000071 /* SecureVaultCore */,
 			);
-			productName = SecureVault;
-			productReference = A10000000000000000000030 /* SecureVault.app */;
-			productType = "com.apple.product-type.application";
+			productName = "secure-vault";
+			productReference = C10000000000000000000030 /* secure-vault */;
+			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -134,6 +194,10 @@
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					A10000000000000000000060 = {
+						CreatedOnToolsVersion = 26.4;
+						ProvisioningStyle = Automatic;
+					};
+					C10000000000000000000060 = {
 						CreatedOnToolsVersion = 26.4;
 						ProvisioningStyle = Automatic;
 					};
@@ -150,13 +214,15 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A10000000000000000000070 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+				B10000000000000000000070 /* XCLocalSwiftPackageReference "." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A10000000000000000000003 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A10000000000000000000060 /* secure-vault */,
+				A10000000000000000000060 /* SecureVault */,
+				C10000000000000000000060 /* secure-vault */,
 			);
 		};
 /* End PBXProject section */
@@ -166,21 +232,35 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10000000000000000000040 /* SecureVault.swift in Sources */,
-				A10000000000000000000041 /* SecureEnclaveManager.swift in Sources */,
-				A10000000000000000000042 /* Utilities.swift in Sources */,
+				C10000000000000000000040 /* SecureVaultApp/SecureVaultApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000000000000000000050 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000040 /* SecureVaultCLI/SecureVault.swift in Sources */,
+				A10000000000000000000042 /* SecureVaultCLI/Utilities.swift in Sources */,
 				A10000000000000000000043 /* DecryptCommand.swift in Sources */,
 				A10000000000000000000044 /* DeleteCommand.swift in Sources */,
 				A10000000000000000000045 /* EncryptCommand.swift in Sources */,
 				A10000000000000000000046 /* KeygenCommand.swift in Sources */,
 				A10000000000000000000047 /* ListCommand.swift in Sources */,
-				A10000000000000000000049 /* CredentialStore.swift in Sources */,
 				A1000000000000000000004A /* DeletePasswordCommand.swift in Sources */,
 				A1000000000000000000004B /* SecretCommands.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C10000000000000000000061 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C10000000000000000000060 /* secure-vault */;
+			targetProxy = C10000000000000000000062 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A10000000000000000000080 /* Debug */ = {
@@ -303,20 +383,21 @@
 		A10000000000000000000083 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A10000000000000000000014 /* SecureVault.xcconfig */;
-				buildSettings = {
-					CODE_SIGN_IDENTITY = "Apple Development";
-					EXECUTABLE_NAME = "secure-vault";
-					GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "secure-vault";
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				EXECUTABLE_NAME = SecureVault;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SecureVault;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				OTHER_LDFLAGS = "-lsqlite3";
 				PRODUCT_BUNDLE_IDENTIFIER = io.securevault;
 				PRODUCT_NAME = SecureVault;
+				SKIP_INSTALL = NO;
 				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_VERSION = 5.0;
 			};
@@ -325,20 +406,59 @@
 		A10000000000000000000084 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A10000000000000000000014 /* SecureVault.xcconfig */;
-				buildSettings = {
-					CODE_SIGN_IDENTITY = "Apple Development";
-					EXECUTABLE_NAME = "secure-vault";
-					GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "secure-vault";
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				EXECUTABLE_NAME = SecureVault;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SecureVault;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.securevault;
+				PRODUCT_NAME = SecureVault;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C10000000000000000000083 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000014 /* SecureVault.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				EXECUTABLE_NAME = "secure-vault";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				OTHER_LDFLAGS = "-lsqlite3";
 				PRODUCT_BUNDLE_IDENTIFIER = io.securevault;
-				PRODUCT_NAME = SecureVault;
+				PRODUCT_NAME = "secure-vault";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		C10000000000000000000084 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000014 /* SecureVault.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				EXECUTABLE_NAME = "secure-vault";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = "-lsqlite3";
+				PRODUCT_BUNDLE_IDENTIFIER = io.securevault;
+				PRODUCT_NAME = "secure-vault";
+				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_VERSION = 5.0;
 			};
@@ -356,7 +476,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A10000000000000000000085 /* Build configuration list for PBXNativeTarget "secure-vault" */ = {
+		A10000000000000000000085 /* Build configuration list for PBXNativeTarget "SecureVault" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A10000000000000000000083 /* Debug */,
@@ -365,7 +485,23 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		C10000000000000000000085 /* Build configuration list for PBXNativeTarget "secure-vault" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10000000000000000000083 /* Debug */,
+				C10000000000000000000084 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B10000000000000000000070 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		A10000000000000000000070 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
@@ -383,6 +519,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A10000000000000000000070 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
+		};
+		B10000000000000000000071 /* SecureVaultCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000070 /* XCLocalSwiftPackageReference "." */;
+			productName = SecureVaultCore;
+		};
+		C10000000000000000000071 /* SecureVaultUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000070 /* XCLocalSwiftPackageReference "." */;
+			productName = SecureVaultUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
