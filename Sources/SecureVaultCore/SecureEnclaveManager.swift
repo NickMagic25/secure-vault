@@ -12,6 +12,8 @@ public enum VaultError: LocalizedError {
     case algorithmUnsupported
     case authenticationUnavailable(String)
     case authenticationFailed(Error)
+    case weakKeyAccessControl(String)
+    case keyAuthenticationProbeFailed(String)
     case keychainError(OSStatus)
 
     public var errorDescription: String? {
@@ -32,6 +34,10 @@ public enum VaultError: LocalizedError {
             return "Touch ID or Apple Watch authentication is unavailable: \(reason)"
         case .authenticationFailed(let err):
             return "Authentication failed: \(err.localizedDescription)"
+        case .weakKeyAccessControl(let tag):
+            return "Key '\(tag)' is not protected by local owner authentication. Delete it and create a new Secure Vault key."
+        case .keyAuthenticationProbeFailed(let tag):
+            return "Could not verify local owner authentication protection for key '\(tag)'."
         case .keychainError(let status):
             let msg = (SecCopyErrorMessageString(status, nil) as String?) ?? "unknown"
             return "Keychain error (\(status)): \(msg)"
@@ -41,15 +47,19 @@ public enum VaultError: LocalizedError {
 
 public enum SecureEnclaveManager {
     private static let algorithm = SecKeyAlgorithm.eciesEncryptionCofactorVariableIVX963SHA256AESGCM
+    private static let authenticationProbePlaintext = Data("secure-vault-authentication-probe".utf8)
     public static let defaultPasswordKeyTag = "io.securevault.password-manager"
 
     // MARK: - Key management
 
     public static func ensureKey(tag: String, label: String?) throws -> SecKey {
         if keyExists(tag: tag) {
+            try requirePrivateKeyAuthentication(tag: tag)
             return try fetchKey(tag: tag, context: nil)
         }
-        return try generateKey(tag: tag, label: label)
+        let key = try generateKey(tag: tag, label: label)
+        try requirePrivateKeyAuthentication(tag: tag)
+        return key
     }
 
     public static func generateKey(tag: String, label: String?) throws -> SecKey {
@@ -101,14 +111,14 @@ public enum SecureEnclaveManager {
     }
 
     public static func authenticate(reason: String) throws {
-        let context = LAContext()
+        _ = try authenticatedContext(reason: reason)
+    }
 
-        let policy: LAPolicy
-        if #available(macOS 15.0, *) {
-            policy = .deviceOwnerAuthenticationWithBiometricsOrCompanion
-        } else {
-            policy = .deviceOwnerAuthenticationWithBiometricsOrWatch
-        }
+    private static func authenticatedContext(reason: String) throws -> LAContext {
+        let context = LAContext()
+        context.localizedReason = reason
+
+        let policy = ownerAuthenticationPolicy()
 
         var authError: NSError?
         guard context.canEvaluatePolicy(policy, error: &authError) else {
@@ -129,6 +139,14 @@ public enum SecureEnclaveManager {
 
         semaphore.wait()
         try result.get()
+        return context
+    }
+
+    private static func ownerAuthenticationPolicy() -> LAPolicy {
+        if #available(macOS 15.0, *) {
+            return .deviceOwnerAuthenticationWithBiometricsOrCompanion
+        }
+        return .deviceOwnerAuthenticationWithBiometricsOrWatch
     }
 
     public static func listKeys() throws -> [(tag: String, label: String?)] {
@@ -160,6 +178,7 @@ public enum SecureEnclaveManager {
 
     public static func encrypt(data: Data, tag: String) throws -> Data {
         // Public key operations never require authentication.
+        try requirePrivateKeyAuthentication(tag: tag)
         let privateKey = try fetchKey(tag: tag, context: nil)
         guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
             throw VaultError.keyNotFound(tag)
@@ -175,19 +194,78 @@ public enum SecureEnclaveManager {
     }
 
     public static func decrypt(data: Data, tag: String, reason: String) throws -> Data {
-        // The LAContext carries the reason string shown in the Touch ID / Watch prompt.
-        let context = LAContext()
-        context.localizedReason = reason
-        let privateKey = try fetchKey(tag: tag, context: context)
+        try decrypt(
+            data: data,
+            tag: tag,
+            reason: reason,
+            validateKeyAccess: requirePrivateKeyAuthentication,
+            authenticate: { try authenticatedContext(reason: $0) },
+            fetchKey: { try fetchKey(tag: $0, context: $1) },
+            decryptData: { try decrypt(data: $1, with: $0) }
+        )
+    }
+
+    internal static func decrypt(
+        data: Data,
+        tag: String,
+        reason: String,
+        validateKeyAccess: (String) throws -> Void,
+        authenticate: (String) throws -> LAContext,
+        fetchKey: (String, LAContext?) throws -> SecKey,
+        decryptData: (SecKey, Data) throws -> Data
+    ) throws -> Data {
+        try validateKeyAccess(tag)
+        let context = try authenticate(reason)
+        let privateKey = try fetchKey(tag, context)
+        return try decryptData(privateKey, data)
+    }
+
+    private static func decrypt(data: Data, with privateKey: SecKey) throws -> Data {
         guard SecKeyIsAlgorithmSupported(privateKey, .decrypt, algorithm) else {
             throw VaultError.algorithmUnsupported
         }
         var cfError: Unmanaged<CFError>?
-        // Authentication fires here when the Secure Enclave performs the operation.
         guard let pt = SecKeyCreateDecryptedData(privateKey, algorithm, data as CFData, &cfError) else {
             throw VaultError.decryptionFailed(cfError!.takeRetainedValue() as Error)
         }
         return pt as Data
+    }
+
+    private static func requirePrivateKeyAuthentication(tag: String) throws {
+        let noAuthContext = LAContext()
+        noAuthContext.interactionNotAllowed = true
+
+        let privateKey = try fetchKey(tag: tag, context: noAuthContext)
+        try requirePrivateKeyAuthentication(
+            tag: tag,
+            privateKey: privateKey,
+            plaintext: authenticationProbePlaintext
+        )
+    }
+
+    private static func requirePrivateKeyAuthentication(tag: String, privateKey: SecKey, plaintext: Data) throws {
+        guard SecKeyIsAlgorithmSupported(privateKey, .decrypt, algorithm),
+              let publicKey = SecKeyCopyPublicKey(privateKey),
+              SecKeyIsAlgorithmSupported(publicKey, .encrypt, algorithm) else {
+            throw VaultError.algorithmUnsupported
+        }
+
+        var encryptionError: Unmanaged<CFError>?
+        guard let ciphertext = SecKeyCreateEncryptedData(publicKey, algorithm, plaintext as CFData, &encryptionError) else {
+            throw VaultError.encryptionFailed(encryptionError!.takeRetainedValue() as Error)
+        }
+
+        var decryptionError: Unmanaged<CFError>?
+        if let decrypted = SecKeyCreateDecryptedData(privateKey, algorithm, ciphertext, &decryptionError) {
+            guard decrypted as Data == plaintext else {
+                throw VaultError.keyAuthenticationProbeFailed(tag)
+            }
+            throw VaultError.weakKeyAccessControl(tag)
+        }
+
+        if let decryptionError {
+            _ = decryptionError.takeRetainedValue()
+        }
     }
 
     // MARK: - Helpers
